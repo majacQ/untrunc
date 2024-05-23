@@ -339,7 +339,16 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 
 
 
-Match Codec::avc1Search(const unsigned char *start, int maxlength) {
+Match Codec::avc1Search(const unsigned char *start, int maxlength, int makskip) {
+	for(int i = 0; i < makskip; i++) {
+		Match m = mp4aMatch(start + i, maxlength - i);
+		if(m.chances > 0) {
+			m.offset = i;
+			return m;
+		}
+	}
+	return Match();
+	/*
 	Match match;
 	for(int offset = 0; offset < maxlength - 8; offset++) {
 		if(start[offset] != 0)
@@ -360,7 +369,7 @@ Match Codec::avc1Search(const unsigned char *start, int maxlength) {
 		match.chances = 10;
 		return match;
 	}
-	return match;
+	return match; */
 }
 
 
@@ -427,8 +436,8 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		return match;
 	// The other values are really uncommon on cameras...
 	if(nal_type > 12) {
-		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';
-		return match;
+		Log::debug << "avc1: Possibly No match because of NAL type: " << nal_type << '\n';
+//		return match;
 	}
 	if(nal_type > 29) {
 		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {

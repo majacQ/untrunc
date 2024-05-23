@@ -28,7 +28,8 @@
 using namespace std;
 
 void usage() {
-	cout << "Usage: untrunc [-a -i -v -w] <ok.mp4> [<corrupt.mp4>]\n\n"
+	cout << "Usage: untrunc [-aisdetmMbNvwqeo] <ok.mp4> [<corrupt.mp4>]\n\n"
+		 << "	-o: output filename (if repairing)\n"
 		 << "	-i: info about codecs and mov structure\n"
 		 << "	-a: test the ok video\n"
 		 << "	-s: simulate recovering the ok video for debug purposes\n"
@@ -44,8 +45,56 @@ void usage() {
 		 << "	-w: debug info\n\n";
 }
 
+void searchFile(std::string ok, std::vector<uint8_t> search) {
+	FILE * fp = fopen(ok.c_str(), "r");
+	if(!fp) {
+		cerr << "Could not open file: " << ok << endl;
+		return;
+	}
+	int batch = 1<<20;
+	uint8_t buffer[batch];
+	size_t pos = 0;
+	while(1) {
+		int readed = fread(buffer, 1, batch, fp);
+		if(readed <= search.size()) break;
+		for(int k = 0; k < readed - search.size(); k++) {
+			int i = 0;
+			while(i < search.size()) {
+				if(search[i] != buffer[k+i])
+					break;
+				i++;
+			}
+			if(i == search.size()) {
+				cout << "Found at:" << pos + k << endl;
+			}
+		}
+		pos += readed - search.size();
+		fseek(fp, - search.size(), SEEK_CUR);
+	}
+}
+
+
+int toHex(char s) {
+	if(s >= 'a') return 10 + (s - 'a');
+	if(s >= 'A') return 10 + (s - 'A');
+	return s - '0';
+}
+std::vector<uint8_t> hexToStr(const char *str) {
+	std::vector<uint8_t> s;
+	while(*str != 0) {
+		uint8_t c = 16*toHex(*str);
+		str++;
+		if(*str == 0) break;
+		c += toHex(*str);
+		s.push_back(c);
+		str++;
+	}
+	return s;
+}
+
 int main(int argc, char *argv[]) {
 
+	std::string output_filename;
 	bool info = false;
 	bool analyze = false;
 	bool simulate = false;
@@ -57,10 +106,12 @@ int main(int argc, char *argv[]) {
 	bool skip_zeros = true;
 	int64_t mdat_begin = -1; //start of packets if specified.
 	int i = 1;
+	std::vector<uint8_t> search;
 	for(; i < argc; i++) {
 		string arg(argv[i]);
 		if(arg[0] == '-') {
 			switch(arg[1]) {
+			case 'o': output_filename = std::string(argv[i+1]); i++; break;
 			case 'i': info = true; break;
 			case 'a': analyze = true; break;
 			case 's': simulate = true; break;
@@ -74,6 +125,7 @@ int main(int argc, char *argv[]) {
 			case 'M': mdat_strategy = Mp4::SEARCH; break;
 			case 'b': mdat_strategy = Mp4::SPECIFIED; mdat_begin = atoi(argv[i+1]); i++; break;
 			case 'B': skip_zeros = false; break;
+			case 'S': search = hexToStr(argv[i+1]); i++; break;
 			}
 		} else
 			break;
@@ -84,6 +136,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	string ok = argv[i];
+	if(search.size()) {
+		searchFile(ok, search);
+		return 0;
+	}
+
 	string corrupt;
 	i++;
 	if(i < argc)
@@ -122,8 +179,9 @@ int main(int argc, char *argv[]) {
 			}
 
 			size_t lastindex = corrupt.find_last_of(".");
-			string fixed = corrupt.substr(0, lastindex);
-			mp4.saveVideo(fixed + "_fixed.mp4");
+			if(output_filename.size() == 0)
+				output_filename = corrupt.substr(0, lastindex) + "_fixed.mp4";
+			mp4.saveVideo(output_filename);
 		}
 	} catch(string e) {
 		Log::error << e << endl;

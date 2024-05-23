@@ -101,9 +101,6 @@ AtomDefinition definition(const char *id) {
 
 
 
-// Atom
-Atom::Atom() : start(0), content_start(0), length(0), name(""), head(""), version("") { }
-
 Atom::~Atom() {
 	for(unsigned int i = 0; i < children.size(); i++)
 		delete children[i];
@@ -564,8 +561,10 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
 	assert(size >= 0);
 	if(offset < 0)
 		throw string("Offset set before beginning of buffer");
-	if(offset + size > file_end - file_begin)
+	if(offset >= file_end)
 		throw string("Out of buffer");
+	if(offset + size > file_end - file_begin)
+		size = file_end - offset;
 
 	if(buffer) {
 		if(buffer_begin <= offset && buffer_end >= offset + size)

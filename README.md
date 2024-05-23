@@ -14,7 +14,31 @@ You need:
     yum install https://extras.getpagespeed.com/release-el7-latest.rpm
     yum install untrunc
 
-## Installing
+## Installing from git
+
+Type the folling commands to build from git :
+```bash
+git clone --recurse-submodules https://github.com/ponchio/untrunc
+cd untrunc/libav
+./configure
+make
+cd ..
+g++ -o untrunc -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz -std=c++11
+sudo install -vpm 755 ./untrunc /usr/local/bin/ 
+which -a untrunc
+```
+
+Depending on your system and Libav configure options you might need to add extra flags to the command line:
+- add `-lbz2`   for errors like `undefined reference to 'BZ2_bzDecompressInit'`,
+- add `-llzma`  for errors like `undefined reference to 'lzma_stream_decoder'`,
+- add `-lX11`   for errors like `undefined reference to 'XOpenDisplay'`,
+- add `-lvdpau` for errors like `undefined reference to 'VDPAU...'`,
+- add `-ldl`    for errors like `undefined reference to 'dlopen'`.
+
+On macOS add the following (tested on OSX 10.12.6):
+- add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration`.
+
+## Installing from zip files
 
 Because Untrunc uses Libav internal headers and internal headers are not included in application development packages, you must build Libav from source.
 
@@ -63,7 +87,6 @@ Depending on your system and Libav configure options you might need to add extra
 On macOS add the following (tested on OSX 10.12.6):
 - add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration`.
 
-
 ### Mac OSX
 
 Follow the above steps for "Installing on other operating system", but use the following g++ command:
@@ -90,7 +113,7 @@ That's it you're done!
 
 ## Docker container
 
-You can use the included Dockerfile to build and execute the package as a container (you might need to add docker group: sudo usermod -a -G docker $USER)
+You can use the included Dockerfile to build and execute the package as a container (you might need to add docker group: sudo usermod -a -G docker $USER, and you might want to add the --network=host option in case of   "Temporary failure resolving")
 ```
 docker build -t untrunc .
 ```

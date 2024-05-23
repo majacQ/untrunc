@@ -11,7 +11,7 @@ TARGET = untrunc
 CONFIG += console
 CONFIG -= -qt app_bundle
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++17
 
 TEMPLATE = app
 
@@ -37,7 +37,8 @@ SOURCES += main.cpp \
     codec_mijd.cpp \
     codec_hev1.cpp \
     codec_mp4v.cpp \
-    codec_gpmd.cpp
+    codec_gpmd.cpp \
+    codec_camm.cpp 
 
 HEADERS += \
     atom.h \
@@ -50,11 +51,11 @@ HEADERS += \
     avlog.h \
     codecstats.h
 
-INCLUDEPATH += ../libav-12.3
-LIBS += ../libav-12.3/libavformat/libavformat.a \
-../libav-12.3/libavcodec/libavcodec.a \
-../libav-12.3/libavutil/libavutil.a \
-../libav-12.3/libavresample/libavresample.a -lbz2
+INCLUDEPATH += ./libav ./libav/libavcodec
+LIBS += ./libav/libavformat/libavformat.a \
+./libav/libavcodec/libavcodec.a \
+./libav/libavutil/libavutil.a \
+./libav/libavresample/libavresample.a -lbz2
 
 
 #INCLUDEPATH += -I/usr/local/lib
@@ -63,7 +64,5 @@ DEFINES += _FILE_OFFSET_BITS=64 VERBOSE VERBOSE1
 
 LIBS += -lz
 
-#QMAKE_LFLAGS += -static
-#LIBS += /usr/lib/x86_64-linux-gnu/libavcodec.a \
-#        /usr/lib/x86_64-linux-gnu/libavformat.a \
-#        /usr/lib/x86_64-linux-gnu/libavutil.a
+#libbz2-dev e libz-dev for ubuntu.
+
