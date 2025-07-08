@@ -1,5 +1,5 @@
 # pull base image
-FROM ubuntu:bionic as build
+FROM ubuntu:18.04 as build
 
 # install packaged dependencies
 RUN apt-get update && apt-get upgrade -y && \
@@ -61,7 +61,7 @@ RUN /usr/bin/g++ -o untrunc \
     -lpthread -lz
 
 # Have a small deliverable Docker image
-FROM ubuntu:bionic
+FROM ubuntu:18.04
 COPY --from=build /untrunc/untrunc /untrunc
 
 # user
